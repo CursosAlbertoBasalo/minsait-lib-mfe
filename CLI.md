@@ -2,6 +2,60 @@
 
 > [Repositorios Cursos](https://github.com/CursosAlbertoBasalo/minsait-lib-mfe)
 
+Incluye este guión de comandos y los diagramas de arquitectura del proyecto.
+
+## Applications
+
+### Ng app
+
+```bash
+ng new mst-ng-app -s -t --ssr=false --style=css
+cd mst-ng-app
+npm link @mst/ui --save
+```
+
+- In order to use linked libraries
+
+```json
+{
+  "projects": {
+    "mst-ng-app": {
+      "architect": {
+        "build": {
+          "options": {
+            "preserveSymlinks": true
+          }
+        }
+      }
+    }
+  },
+  "cli": {
+    "analytics": false,
+    "cache": {
+      "enabled": false
+    }
+  }
+}
+```
+
+```bash
+npm start
+```
+
+### Non Angular ecosystem
+
+```bash
+mkdir mst-js-app
+cd mst-js-app
+npm init -y
+git init
+# Add .gitignore
+# Create an HTML file
+npm link @mst/wbc --save
+# "start": "npx http-server ./ -p 8080 "
+npm start
+```
+
 ## UI workspace
 
 ### mst-ws-ui workspace
@@ -37,9 +91,13 @@ npm start
 
 #### Version control
 
+- At workspace package.json
+
 ```bash
 npm i -D standard-version
 ```
+
+- At mst-ui package.json
 
 ```json
 {
@@ -60,7 +118,9 @@ npm i -D standard-version
 }
 ```
 
-#### Build and publish
+#### Build and link
+
+- At workspace package.json
 
 ```bash
 # "build": "ng build mst-ui --configuration production",
@@ -80,6 +140,8 @@ ng g app mst-ui-wbc --routing=false --ssr=false --style=css -S -s -t
 npm i @angular/elements
 ```
 
+- At public folder of mst-ui-wbc
+
 ```json
 {
   "name": "@mst/wbc",
@@ -97,58 +159,165 @@ npm i @angular/elements
 
 ```bash
 # "build:wbc": "ng build mst-wbc --configuration production ",
-# "prepack": "npm run build:wbc && cd ./projects/mst-wbc && npm run release",
-# "pack": "copyfiles projects/mst-wbc/package.json dist/mst-wbc/browser -f ",
-# "postpack": "cd ./dist/mst-wbc/browser && npm link",
+# "prepack": "npm run build:wbc && cd ./projects/mst-ui-wbc/public && npm run release",
+# "pack": "cd ./dist/mst-ui-wbc/browser && npm link",
+# "postpack": "git push --follow-tags origin main",
+npm run pack
 # list global npm links
 npm ls -g --depth=0
 ```
 
-## Applications
+## Other Libraries workspaces
 
-### Ng app
+### mst-ws-srv workspace
+
+#### mst-srv library generation
 
 ```bash
-ng new mst-ng-app -s -t --ssr=false --style=css
-cd mst-ng-app
-npm link @mst/ui
+ng new mst-ws-srv --no-create-application
+cd mst-ws-srv
+ng g lib mst-srv
+ng g s logger
+ng g s crud-repository
 ```
+
+#### Build and publish
 
 ```json
 {
-  "projects": {
-    "mst-ng-app": {
-      "architect": {
-        "build": {
-          "options": {
-            "preserveSymlinks": true
-          }
-        }
-      }
-    }
+  "name": "@mst/srv",
+  "description": "A library with services for Minsait projects",
+  "version": "0.0.1",
+  "scripts": {
+    "release": "standard-version"
   },
-  "cli": {
-    "analytics": false,
-    "cache": {
-      "enabled": false
-    }
-  }
+  "peerDependencies": {
+    "@angular/common": "^18.0.0",
+    "@angular/core": "^18.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
 }
 ```
 
 ```bash
-npm start
+# "build": "ng build --configuration production",
+npm run build
+# "prepublish": "cd ./projects/mst-srv && npm run release ",
+# "publish": "npm run build && cd ./dist/mst-srv && npm link",
+# "postpublish": "git push --follow-tags origin main"
+npm run publish
 ```
 
-### Non Angular ecosystem
+> Tokens for configure the library in the Angular application
+
+### mst-ws-core workspace
+
+#### mst-core library generation
 
 ```bash
-mkdir mst-js-app
-cd mst-js-app
-npm init -y
-git init
-# Create an HTML file
-npm link @mst/wbc
-# "start": "npx http-server ./ -p 8080 "
-npm start
+ng new mst-ws-core --no-create-application
+cd mst-ws-core
+ng g lib mst-core
+ng g interceptor metrics
+ng g class error-service
+```
+
+#### Build and publish
+
+```json
+{
+  "name": "@mst/core",
+  "description": "A library with core services for Minsait projects",
+  "version": "0.0.1",
+  "scripts": {
+    "release": "standard-version"
+  },
+  "peerDependencies": {
+    "@angular/common": "^18.0.0",
+    "@angular/core": "^18.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}
+```
+
+```bash
+# "build": "ng build --configuration production",
+npm run build
+# "prepublish": "cd ./projects/mst-core && npm run release ",
+# "publish": "npm run build && cd ./dist/mst-core && npm link",
+# "postpublish": "git push --follow-tags origin main"
+npm run publish
+```
+
+> Warning: Beware of the library dependencies
+
+> ToDo: Security: Add an Auth library or include the feature in mst-core
+
+### Non Angular ecosystem Libraries
+
+#### mst-ws-domain workspace
+
+```bash
+mkdir mst-ws-domain
+cd mst-ws-domain
+```
+
+#### mst-domain library generation using vite
+
+```bash
+npm create vite@latest mst-domain --template vanilla-ts
+cd mst-domain
+npm install
+npm i -D standard-version
+```
+
+> Remove everything but the src/main and the vite files
+
+> Add vite.config.ts
+
+```ts
+import { defineConfig } from "vite";
+export default defineConfig({
+  build: {
+    lib: {
+      entry: "src/main.ts",
+      name: "domain",
+      fileName: "domain",
+    },
+  },
+});
+```
+
+> Add public/package.json
+
+```json
+{
+  "name": "@mst/domain",
+  "description": "A library with domain services for Minsait projects",
+  "version": "0.0.1",
+  "scripts": {
+    "release": "standard-version"
+  },
+  "peerDependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}
+```
+
+#### Build and link
+
+```bash
+# "prebuild": "tsc",
+# "build": "vite build",
+# "prepublish": "cd ./public && npm run release ",
+# "publish": "npm run build && cd ./dist && npm link",
+# "postpublish": "git push --follow-tags origin main"
+npm run publish
 ```
